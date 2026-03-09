@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计算能力的指数增长史 | The History of Exponential Computing</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-purple: #bc13fe;
+            --neon-green: #0aff0a;
+            --deep-space: #050510;
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+            background-color: var(--deep-space);
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a1a; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 4px; }
+
+        /* Glitch Effect */
+        .glitch-text { position: relative; }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--deep-space);
+        }
+        .glitch-text::before { left: 2px; text-shadow: -1px 0 var(--neon-purple); clip: rect(24px, 550px, 90px, 0); animation: glitch-anim-2 3s infinite linear alternate-reverse; }
+        .glitch-text::after { left: -2px; text-shadow: -1px 0 var(--neon-cyan); clip: rect(85px, 550px, 140px, 0); animation: glitch-anim 2.5s infinite linear alternate-reverse; }
+        @keyframes glitch-anim { 0% { clip: rect(14px, 9999px, 121px, 0); } 20% { clip: rect(89px, 9999px, 12px, 0); } 40% { clip: rect(2px, 9999px, 84px, 0); } 60% { clip: rect(67px, 9999px, 55px, 0); } 80% { clip: rect(23px, 9999px, 12px, 0); } 100% { clip: rect(99px, 9999px, 134px, 0); } }
+        @keyframes glitch-anim-2 { 0% { clip: rect(65px, 9999px, 100px, 0); } 20% { clip: rect(12px, 9999px, 4px, 0); } 40% { clip: rect(87px, 9999px, 23px, 0); } 60% { clip: rect(4px, 9999px, 76px, 0); } 80% { clip: rect(34px, 9999px, 12px, 0); } 100% { clip: rect(12px, 9999px, 54px, 0); } }
+
+        /* 3D Tilt Card */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+        }
+        .tilt-content {
+            transform: translateZ(20px);
+        }
+
+        /* Modal Animation */
+        .modal-enter { opacity: 0; transform: scale(0.9); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modal-exit { opacity: 1; transform: scale(1); }
+        .modal-exit-active { opacity: 0; transform: scale(0.9); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Simulator Progress Bar */
+        .progress-fill { transition: width 0.1s linear; }
+        
+        /* CRT Effect for Modal */
+        .crt-overlay {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--neon-cyan); cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px var(--neon-cyan);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- Background -->
+    <canvas id="particle-canvas" class="fixed top-0 left-0 w-full h-full -z-10"></canvas>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-40 px-6 py-4 flex justify-between items-center bg-[#050510]/80 backdrop-blur-md border-b border-white/5">
+        <div class="text-2xl font-bold tracking-tighter text-white cursor-pointer" onclick="window.scrollTo(0,0)">
+            EXPONENTIAL<span class="text-cyan-400">.HISTORY</span>
+        </div>
+        <div class="hidden md:flex gap-8 text-sm font-mono text-gray-400">
+            <a href="#timeline" class="hover:text-cyan-400 transition-colors">历史档案</a>
+            <a href="#simulator" class="hover:text-purple-400 transition-colors">进化模拟器</a>
+            <a href="#comparator" class="hover:text-green-400 transition-colors">算力对比</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="relative h-screen flex flex-col justify-center items-center text-center px-4">
+        <div class="z-10 max-w-5xl">
+            <p class="text-cyan-400 font-mono mb-4 tracking-widest text-sm animate-pulse">SYSTEM INITIALIZED...</p>
+            <h1 class="text-6xl md:text-9xl font-bold mb-6 leading-tight glitch-text" data-text="指数增长">指数增长</h1>
+            <h2 class="text-2xl md:text-4xl text-gray-300 font-light mb-8">从算盘到 <span class="text-purple-500 font-bold">AGI</span> 的计算简史</h2>
+            <div class="flex gap-4 justify-center">
+                <button onclick="document.getElementById('timeline').scrollIntoView({behavior: 'smooth'})" class="px-8 py-3 bg-cyan-500/10 border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all font-mono">探索历史</button>
+                <button onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})" class="px-8 py-3 bg-purple-500/10 border border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-black transition-all font-mono">开始模拟</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Timeline -->
+    <section id="timeline" class="py-24 px-6 relative">
+        <div class="container mx-auto mb-16">
+            <h3 class="text-4xl font-bold mb-2">历史档案馆 <i class="fas fa-database text-cyan-500 ml-2"></i></h3>
+            <p class="text-gray-400">点击卡片查看详细技术解密</p>
+        </div>
+
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Cards generated by JS -->
+            <div id="timeline-grid" class="contents"></div>
+        </div>
+    </section>
+
+    <!-- Simulator Section -->
+    <section id="simulator" class="py-24 bg-black/50 border-y border-white/5 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-20"></div>
+        
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col lg:flex-row gap-12">
+                
+                <!-- Left: Controls -->
+                <div class="lg:w-1/3 space-y-8">
+                    <div>
+                        <h3 class="text-4xl font-bold mb-2 text-purple-400">CPU 进化模拟器</h3>
+                        <p class="text-gray-400 text-sm">体验从 4-bit 到量子计算的指数级跨越。</p>
+                    </div>
+
+                    <div class="bg-gray-900/80 p-6 rounded-xl border border-white/10 backdrop-blur-md">
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-gray-400 text-sm">晶体管数量</span>
+                            <span id="sim-transistors" class="text-2xl font-mono text-cyan-400">2,300</span>
+                        </div>
+                        <div class="w-full bg-gray-800 h-2 rounded-full mb-6 overflow-hidden">
+                            <div id="bar-transistors" class="h-full bg-cyan-500 progress-fill" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-gray-400 text-sm">时钟频率</span>
+                            <span id="sim-clock" class="text-2xl font-mono text-purple-400">740 KHz</span>
+                        </div>
+                        <div class="w-full bg-gray-800 h-2 rounded-full mb-6 overflow-hidden">
+                            <div id="bar-clock" class="h-full bg-purple-500 progress-fill" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-gray-400 text-sm">制程工艺</span>
+                            <span id="sim-process" class="text-2xl font-mono text-green-400">10,000 nm</span>
+                        </div>
+                        
+                        <div class="mt-8 pt-6 border-t border-white/10">
+                            <div class="flex justify-between text-sm mb-4">
+                                <span class="text-gray-400">当前架构:</span>
+                                <span id="sim-arch" class="text-white font-bold">Intel 4004</span>
+                            </div>
+                            <button id="btn-evolve" onclick="evolveCPU()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg font-bold text-white hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all transform active:scale-95">
+                                进化下一代 <i class="fas fa-dna ml-2"></i>
+                            </button>
+                            <p class="text-xs text-center text-gray-500 mt-2">点击按钮模拟技术突破</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Visualization -->
+                <div class="lg:w-2/3 bg-gray-900/50 rounded-2xl border border-white/10 p-8 flex flex-col items-center justify-center relative min-h-[500px]">
+                    <div class="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                        <i class="fas fa-microchip text-[300px]"></i>
+                    </div>
+                    
+                    <!-- Dynamic Chip Visualization -->
+                    <div class="relative z-10 text-center">
+                        <div id="chip-visual" class="w-64 h-64 border-4 border-cyan-500/30 rounded-lg relative transition-all duration-500 flex items-center justify-center bg-black/40 backdrop-blur-sm mb-8">
+                            <div class="absolute inset-0 grid grid-cols-4 gap-1 p-2 opacity-50" id="chip-grid">
+                                <!-- Grid cells generated by JS -->
+                            </div>
+                            <div class="text-6xl font-bold text-white/20 font-mono" id="chip-year">1971</div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <p class="text-cyan-400 font-mono text-sm tracking-widest">GENERATION <span id="gen-count">1</span></p>
+                            <h4 id="chip-name" class="text-3xl font-bold text-white">Intel 4004</h4>
+                            <p id="chip-desc" class="text-gray-400 max-w-lg mx-auto">世界上第一款微处理器，拥有2,300个晶体管，开启了现代计算的新纪元。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparator Tool -->
+    <section id="comparator" class="py-24 px-6">
+        <div class="container mx-auto max-w-4xl">
+            <div class="text-center mb-12">
+                <h3 class="text-4xl font-bold mb-4">时空算力对比器</h3>
+                <p class="text-gray-400">选择一个年份，看看当年的超级计算机相当于现在的什么设备。</p>
+            </div>
+
+            <div class="bg-gray-900/80 border border-white/10 rounded-2xl p-8 md:p-12 backdrop-blur-xl shadow-2xl">
+                <div class="mb-12">
+                    <label class="block text-sm font-mono text-cyan-400 mb-4">选择年份: <span id="year-display" class="text-white text-xl ml-2">1985</span></label>
+                    <input type="range" min="1945" max="2024" value="1985" step="1" id="year-slider" oninput="updateComparison(this.value)">
+                    <div class="flex justify-between text-xs text-gray-600 mt-2 font-mono">
+                        <span>ENIAC</span>
+                        <span>2024</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <!-- Left: Historical -->
+                    <div class="text-center p-6 border-r border-white/10">
+                        <div class="text-6xl mb-4" id="comp-icon-old">🖥️</div>
+                        <h4 class="text-2xl font-bold text-white mb-2" id="comp-name-old">Cray-2</h4>
+                        <p class="text-cyan-400 font-mono text-3xl font-bold mb-2" id="comp-flops-old">1.9 GFLOPS</p>
+                        <p class="text-sm text-gray-500">峰值性能</p>
+                    </div>
+
+                    <!-- Right: Modern Equivalent -->
+                    <div class="text-center p-6">
+                        <div class="text-6xl mb-4" id="comp-icon-new">📱</div>
+                        <h4 class="text-2xl font-bold text-white mb-2">相当于现在的</h4>
+                        <p class="text-purple-400 font-mono text-4xl font-bold mb-2" id="comp-equiv">1/50 部 iPhone</p>
+                        <p class="text-sm text-gray-500" id="comp-desc">iPhone 15 Pro (A17 Pro)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-gray-800 text-center text-gray-600 text-sm font-mono bg-black">
+        <p>INTERACTIVE COMPUTING HISTORY EXHIBIT • GENERATED BY AI</p>
+    </footer>
+
+    <!-- Detail Modal Overlay -->
+    <div id="detail-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="bg-[#0a0a12] w-full max-w-4xl h-[80vh] rounded-2xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,243,255,0.1)] flex flex-col md:flex-row overflow-hidden relative">
+            <div class="crt-overlay absolute inset-0 z-20"></div>
+            
+            <!-- Close Button -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-30 text-gray-400 hover:text-white text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <!-- Left: Visual -->
+            <div class="md:w-2/5 bg-gradient-to-br from-gray-900 to-black p-8 flex flex-col justify-center items-center border-r border-white/5 relative overflow-hidden">
+                <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+                <div id="modal-icon" class="text-9xl mb-6 drop-shadow-[0_0_15px_rgba(0,243,255,0.5)] transition-transform duration-700 hover:scale-110 hover:rotate-6"></div>
+                <div class="text-center z-10">
+                    <h2 id="modal-year" class="text-5xl font-bold font-mono text-white/10 absolute top-4 left-4 select-none"></h2>
+                    <h3 id="modal-title" class="text-3xl font-bold text-white mb-2"></h3>
+                    <span id="modal-subtitle" class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-mono border border-cyan-500/30"></span>
+                </div>
+            </div>
+
+            <!-- Right: Data -->
+            <div class="md:w-3/5 p-8 md:p-12 overflow-y-auto font-mono text-sm relative z-10">
+                <div class="space-y-8">
+                    <div>
+                        <h4 class="text-gray-500 text-xs uppercase tracking-widest mb-2">技术规格 // SPECS</h4>
+                        <ul id="modal-specs" class="space-y-3 text-gray-300"></ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-gray-500 text-xs uppercase tracking-widest mb-2">历史影响 // IMPACT</h4>
+                        <p id="modal-impact" class="text-gray-300 leading-relaxed"></p>
+                    </div>
+
+                    <div class="bg-white/5 p-4 rounded border-l-2 border-purple-500">
+                        <h4 class="text-purple-400 text-xs uppercase tracking-widest mb-1">冷知识 // TRIVIA</h4>
+                        <p id="modal-trivia" class="text-gray-400 italic"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data ---
+        const timelineData = [
+            {
+                year: "2400 BC",
+                title: "算盘 (Abacus)",
+                subtitle: "机械计算起点",
+                icon: '<i class="fas fa-calculator text-amber-600"></i>',
+                color: "border-amber-600",
+                specs: ["材质: 木头与石子", "运算: 加减乘除", "速度: 人工手动", "便携性: 极高"],
+                impact: "人类历史上最长寿的计算工具，奠定了十进制计算的基础，至今仍在部分地区使用。",
+                trivia: "熟练的算盘使用者在加减法运算上可以击败早期的电子计算器。"
+            },
+            {
+                year: "1642",
+                title: "帕斯卡计算器",
+                subtitle: "齿轮传动",
+                icon: '<i class="fas fa-cogs text-gray-400"></i>',
+                color: "border-gray-400",
+                specs: ["发明者: 布莱兹·帕斯卡", "原理: 齿轮啮合进位", "功能: 8位加减法", "产量: 约20台"],
+                impact: "第一台真正意义上能够自动进位的机械计算器，证明了复杂计算可以通过机械装置自动完成。",
+                trivia: "帕斯卡制造它是为了帮助父亲计算税收。"
+            },
+            {
+                year: "1946",
+                title: "ENIAC",
+                subtitle: "电子真空管时代",
+                icon: '<i class="fas fa-bolt text-yellow-500"></i>',
+                color: "border-yellow-500",
+                specs: ["重量: 30吨", "体积: 170平米", "电子管: 17,468个", "功耗: 150千瓦"],
+                impact: "第一台通用电子计算机，标志着电子计算时代的开始，计算速度比当时的人力计算快1000倍。",
+                trivia: "由于电子管经常烧毁，ENIAC 平均每7分钟就要烧坏一个管子，有专门的技术人员拿着备用管子跑来跑去更换。"
+            },
+            {
+                year: "1971",
+                title: "Intel 4004",
+                subtitle: "微处理器诞生",
+                icon: '<i class="fas fa-microchip text-cyan-500"></i>',
+                color: "border-cyan-500",
+                specs: ["晶体管: 2,300个", "制程: 10微米", "频率: 740 KHz", "位宽: 4-bit"],
+                impact: "将CPU集成到单块芯片上，个人电脑成为可能，开启了微型计算机革命。",
+                trivia: "最初它是为日本计算器公司 Busicom 定制的，后来 Intel 买回了版权。"
+            },
+            {
+                year: "1993",
+                title: "Pentium",
+                subtitle: "超标量架构",
+                icon: '<i class="fas fa-rocket text-red-500"></i>',
+                color: "border-red-500",
+                specs: ["晶体管: 310万个", "频率: 60-300 MHz", "缺陷: FDIV Bug (浮点除法错误)", "意义: 家用多媒体"],
+                impact: "推动了多媒体计算机的普及，虽然早期的 FDIV Bug 让它声名狼藉，但也确立了 Intel 在消费级市场的霸主地位。",
+                trivia: "Intel 为召回有缺陷的芯片花费了数亿美元，但'奔腾'这个名字从此家喻户晓。"
+            },
+            {
+                year: "2020",
+                title: "Apple M1",
+                subtitle: "ARM 架构革命",
+                icon: '<i class="fab fa-apple text-gray-200"></i>',
+                color: "border-gray-200",
+                specs: ["晶体管: 160亿个", "制程: 5nm", "架构: ARM (SoC)", "功耗: 极低"],
+                impact: "证明了高性能计算不需要高功耗，统一内存架构(UMA)极大提升了能效比，迫使 x86 阵营改革。",
+                trivia: "这是苹果 Mac 电脑第一次抛弃 Intel 芯片，性能却碾压了当时市面上的大多数笔记本 CPU。"
+            }
+        ];
+
+        const cpuGenerations = [
+            { name: "Intel 4004", year: 1971, trans: 2300, clock: "740 KHz", process: "10,000", nm: 10000, desc: "世界上第一款微处理器，拥有2,300个晶体管，开启了现代计算的新纪元。" },
+            { name: "Intel 8086", year: 1978, trans: 29000, clock: "5-10 MHz", process: "3,000", nm: 3000, desc: "x86 架构的起源，奠定了现代 PC 的指令集基础。" },
+            { name: "Intel 486", year: 1989, trans: 1180000, clock: "25-100 MHz", process: "1000", nm: 1000, desc: "首次在 CPU 中集成数学协处理器(FPU)，游戏性能飞跃。" },
+            { name: "Pentium Pro", year: 1995, trans: 5500000, clock: "150-200 MHz", process: "350", nm: 350, desc: "服务器级架构下放到桌面，乱序执行引擎极大提升了效率。" },
+            { name: "Core 2 Duo", year: 2006, trans: 291000000, clock: "1.8-3.0 GHz", process: "65", nm: 65, desc: "Core 架构回归，能耗比再次飞跃，终结了高频低能的奔腾4时代。" },
+            { name: "Apple M1", year: 2020, trans: 16000000000, clock: "3.2 GHz", process: "5", nm: 5, desc: "ARM 架构在桌面端的胜利，160亿晶体管带来了惊人的能效比。" },
+            { name: "Apple M3 Max", year: 2023, trans: 92000000000, clock: "4.0 GHz", process: "3", nm: 3, desc: "3nm 工艺，920亿晶体管，性能堪比高端台式机，功耗却只有几分之一。" },
+            { name: "Quantum Prototype", year: 2035, trans: "Unknown", clock: "Variable", process: "<1", nm: 0.5, desc: "量子比特叠加态计算，理论上在特定任务上算力超过所有经典计算机之和。" }
+        ];
+
+        // --- Initialization ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Render Timeline
+        const grid = document.getElementById('timeline-grid');
+        timelineData.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = `tilt-card bg-white/5 backdrop-blur-sm border ${item.color} border-opacity-30 rounded-xl p-6 cursor-pointer hover:bg-white/10 transition-all duration-300 group`;
+            card.onclick = () => openModal(index);
+            card.innerHTML = `
+                <div class="tilt-content flex flex-col h-full">
+                    <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">${item.icon}</div>
+                    <div class="text-sm font-mono text-gray-400 mb-1">${item.year}</div>
+                    <h4 class="text-xl font-bold text-white mb-2">${item.title}</h4>
+                    <p class="text-xs text-gray-500 mb-4">${item.subtitle}</p>
+                    <div class="mt-auto text-cyan-400 text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity">点击查看详情 <i class="fas fa-arrow-right ml-1"></i></div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        // 3D Tilt Effect
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -10; // Max rotation deg
+                const rotateY = ((x - centerX) / centerX) * 10;
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+            });
+        });
+
+        // --- Modal Logic ---
+        const modal = document.getElementById('detail-modal');
+        
+        function openModal(index) {
+            const data = timelineData[index];
+            
+            document.getElementById('modal-icon').innerHTML = data.icon;
+            document.getElementById('modal-year').innerText = data.year;
+            document.getElementById('modal-title').innerText = data.title;
+            document.getElementById('modal-subtitle').innerText = data.subtitle;
+            document.getElementById('modal-impact').innerText = data.impact;
+            document.getElementById('modal-trivia').innerText = data.trivia;
+            
+            const specsList = document.getElementById('modal-specs');
+            specsList.innerHTML = '';
+            data.specs.forEach(spec => {
+                const li = document.createElement('li');
+                li.className = "flex items-center";
+                li.innerHTML = `<span class="w-2 h-2 bg-cyan-500 rounded-full mr-3"></span>${spec}`;
+                specsList.appendChild(li);
+            });
+
+            modal.classList.remove('hidden', 'pointer-events-none');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.add('scale-100');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden', 'pointer-events-none');
+            }, 300);
+        }
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // --- Simulator Logic ---
+        let currentGen = 0;
+        
+        function initSimulator() {
+            updateSimUI();
+            // Generate grid cells
+            const gridContainer = document.getElementById('chip-grid');
+            for(let i=0; i<16; i++) {
+                const div = document.createElement('div');
+                div.className = "bg-cyan-500/20 rounded-sm animate-pulse";
+                div.style.animationDelay = `${Math.random()}s`;
+                gridContainer.appendChild(div);
+            }
+        }
+
+        function evolveCPU() {
+            if (currentGen < cpuGenerations.length - 1) {
+                currentGen++;
+                
+                // Animation effects
+                const btn = document.getElementById('btn-evolve');
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 进化中...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    updateSimUI();
+                    btn.innerHTML = '进化下一代 <i class="fas fa-dna ml-2"></i>';
+                    btn.disabled = false;
+                    
+                    // Visual flare
+                    gsap.from("#chip-visual", {rotationY: 360, duration: 1, ease: "back.out(1.7)"});
+                }, 800);
+            } else {
+                alert("已达到当前技术奇点！等待下一次科技革命...");
+                currentGen = 0; // Reset for fun
+                updateSimUI();
+            }
+        }
+
+        function updateSimUI() {
+            const data = cpuGenerations[currentGen];
+            
+            document.getElementById('sim-transistors').innerText = typeof data.trans === 'number' ? data.trans.toLocaleString() : data.trans;
+            document.getElementById('sim-clock').innerText = data.clock;
+            document.getElementById('sim-process').innerText = data.process + " nm";
+            document.getElementById('sim-arch').innerText = data.name;
+            document.getElementById('chip-year').innerText = data.year;
+            document.getElementById('chip-name').innerText = data.name;
+            document.getElementById('chip-desc').innerText = data.desc;
+            document.getElementById('gen-count').innerText = currentGen + 1;
+
+            // Update Bars (Logarithmic approximation for visual)
+            const maxTrans = 100000000000; // 100B
+            const transPercent = Math.min(100, (data.trans / maxTrans) * 100 + 5);
+            document.getElementById('bar-transistors').style.width = `${transPercent}%`;
+
+            // Clock speed bar (simplified)
+            let clockVal = parseFloat(data.clock);
+            if(data.clock.includes('GHz')) clockVal *= 1000;
+            const clockPercent = Math.min(100, (clockVal / 5000) * 100); // Assume 5GHz max
+            document.getElementById('bar-clock').style.width = `${clockPercent}%`;
+
+            // Grid density visual
+            const cells = document.querySelectorAll('#chip-grid div');
+            cells.forEach(cell => {
+                cell.style.opacity = Math.min(1, (10000 / data.nm) * 0.1);
+                cell.style.backgroundColor = currentGen > 5 ? '#bc13fe' : '#00f3ff'; // Change color for modern era
+            });
+        }
+
+        initSimulator();
+
+        // --- Comparator Logic ---
+        const comparisons = [
+            { year: 1945, name: "ENIAC", flops: 500, icon: "🎛️", equiv: "一个计算器", desc: "Casio FX-991" },
+            { year: 1961, name: "IBM 7030", flops: 1200000, icon: "🗄️", equiv: "一个电子表", desc: "Casio F-91W" },
+            { year: 1985, name: "Cray-2", flops: 1900000000, icon: "🖥️", equiv: "1/50 部 iPhone", desc: "iPhone 15 Pro" },
+            { year: 1997, name: "Deep Blue", flops: 113000000000, icon: "♟️", equiv: "1/3 部 iPhone", desc: "iPhone 15 Pro" },
+            { year: 2008, name: "Roadrunner", flops: 1000000000000000, icon: "🐆", equiv: "30 部 iPhone", desc: "iPhone 15 Pro" },
+            { year: 2024, name: "Frontier", flops: 1200000000000000000, icon: "🌌", equiv: "3,000,000 部 iPhone", desc: "iPhone 15 Pro" }
+        ];
+
+        function updateComparison(year) {
+            document.getElementById('year-display').innerText = year;
+            
+            // Find closest data point
+            let data = comparisons[0];
+            for(let i=0; i<comparisons.length; i++) {
+                if (year >= comparisons[i].year) {
+                    data = comparisons[i];
+                } else {
+                    break;
+                }
+            }
+
+            // Interpolate roughly for display purposes (simplified logic)
+            document.getElementById('comp-icon-old').innerText = data.icon;
+            document.getElementById('comp-name-old').innerText = data.name;
+            
+            // Format FLOPS
+            let flopsStr = "";
+            if(data.flops > 1e15) flopsStr = (data.flops/1e15).toFixed(1) + " PFLOPS";
+            else if(data.flops > 1e12) flopsStr = (data.flops/1e12).toFixed(1) + " TFLOPS";
+            else if(data.flops > 1e9) flopsStr = (data.flops/1e9).toFixed(1) + " GFLOPS";
+            else flopsStr = data.flops.toLocaleString() + " FLOPS";
+            
+            document.getElementById('comp-flops-old').innerText = flopsStr;
+            document.getElementById('comp-equiv').innerText = data.equiv;
+            document.getElementById('comp-desc').innerText = data.desc;
+        }
+
+        // Initialize comparison
+        updateComparison(1985);
+
+        // --- Particle Background (Same as before, slightly enhanced) ---
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(0, 243, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(0, 243, 255, ${0.1 - distance/1200})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+                particles[i].update();
+                particles[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+    </script>
+</body>
+</html>
